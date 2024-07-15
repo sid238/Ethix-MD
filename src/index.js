@@ -58,6 +58,10 @@ if (!fs.existsSync(sessionRootDir)) {
     fs.mkdirSync(sessionRootDir, { recursive: true });
 }
 
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function downloadSessionData(sessionId, credsPath) {
     const sessdata = sessionId.split("Ethix-MD&")[1];
     const url = `https://pastebin.com/raw/${sessdata}`;
@@ -65,7 +69,7 @@ async function downloadSessionData(sessionId, credsPath) {
         const response = await axios.get(url);
         const data = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
         await fs.promises.writeFile(credsPath, data);
-        console.log(`🥳 Session Successfully Loaded for ${sessionId} !!`);
+        console.log(`🤩 Session Successfully Loaded for ${sessionId} !!`);
     } catch (error) {
         console.error(`Failed to download session data for ${sessionId}:`, error);
         process.exit(1);
@@ -108,21 +112,21 @@ async function startSession(sessionId) {
             });
 
             Matrix.ev.on('connection.update', (update) => {
-            const { connection, lastDisconnect } = update;
-            if (connection === 'close') {
-                if (lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut) {
-                    start();
+                const { connection, lastDisconnect } = update;
+                if (connection === 'close') {
+                    if (lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut) {
+                        start();
+                    }
+                } else if (connection === 'open') {
+                    if (initialConnection) {
+                        console.log(chalk.green("😃 Integration Successful️ ✅"));
+                        Matrix.sendMessage(Matrix.user.id, { text: `😃 Integration Successful️ ✅` });
+                        initialConnection = false;
+                    } else {
+                        console.log(chalk.blue("♻️ Connection reestablished after restart."));
+                    }
                 }
-            } else if (connection === 'open') {
-                if (initialConnection) {
-                    console.log(chalk.green("😃 Integration Successful️ ✅"));
-                    Matrix.sendMessage(Matrix.user.id, { text: `😃 Integration Successful️ ✅` });
-                    initialConnection = false;
-                } else {
-                    console.log(chalk.blue("♻️ Connection reestablished after restart."));
-                }
-            }
-        });
+            });
 
             Matrix.ev.on('creds.update', saveCreds);
 
@@ -160,7 +164,13 @@ async function startSession(sessionId) {
 }
 
 const sessionIds = process.env.SESSION_ID.split(',').map(id => id.trim());
-sessionIds.forEach(startSession);
+
+(async () => {
+    for (const sessionId of sessionIds) {
+        await startSession(sessionId);
+        await delay(5000);  // 5 seconds delay
+    }
+})();
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
