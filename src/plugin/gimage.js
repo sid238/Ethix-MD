@@ -19,25 +19,20 @@ const imageCommand = async (m, sock) => {
     try {
       await m.React("📥");
       const response = await axios.get(`https://api.guruapi.tech/api/googleimage?text=${encodeURIComponent(query)}`);
-      
-      if (!response.data || !response.data.result) {
+
+      if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
         return sock.sendMessage(m.from, { text: 'No images found for your search query.' });
       }
 
-      const results = response.data.result.slice(0, 5); // Get the top 5 images
+      const images = response.data.slice(0, 5); // Get the top 5 images
 
-      if (results.length === 0) {
-        return sock.sendMessage(m.from, { text: 'No images found for your search query.' });
-      }
-
-      for (const imageUrl of results) {
+      for (const imageData of images) {
         await sleep(500);
-        const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-        const imageBuffer = Buffer.from(imageResponse.data, 'binary');
+        const imageBuffer = Buffer.from(imageData, 'binary');
 
         await sock.sendMessage(m.from, { image: imageBuffer, caption: '' }, { quoted: m });
-        await m.React("✅");
       }
+      await m.React("✅");
     } catch (error) {
       console.error("Error fetching images:", error);
       await sock.sendMessage(m.from, { text: 'Error fetching images.' });
