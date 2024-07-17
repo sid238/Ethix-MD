@@ -6,21 +6,21 @@ const imageCommand = async (m, sock) => {
   const prefixMatch = m.body.match(/^[\\/!#.]/);
   const prefix = prefixMatch ? prefixMatch[0] : '/';
   const cmd = m.body.startsWith(prefix) ? m.body.slice(prefix.length).split(' ')[0].toLowerCase() : '';
-  const args = m.body.slice(prefix.length + cmd.length).trim();
-  let query = args;
+  let query = m.body.slice(prefix.length + cmd.length).trim();
 
   const validCommands = ['image', 'img', 'gimage'];
 
   if (validCommands.includes(cmd)) {
+  
     if (!query && !(m.quoted && m.quoted.text)) {
-      return sock.sendMessage(m.from, { text: `Please provide some text, Example usage: ${prefix + cmd} sunnyleone` });
+      return sock.sendMessage(m.from, { text: `Please provide some text, Example usage: ${prefix + cmd} black cats` });
     }
+  
     if (!query && m.quoted && m.quoted.text) {
       query = m.quoted.text;
     }
 
-    const match = query.match(/(\d+)/);
-    const numberOfImages = match ? parseInt(match[1]) : 1;
+    const numberOfImages = 5; 
 
     try {
       await sock.sendMessage(m.from, { text: '*Please wait*' });
